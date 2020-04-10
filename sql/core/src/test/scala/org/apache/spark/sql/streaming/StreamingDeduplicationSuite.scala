@@ -26,14 +26,9 @@ import org.apache.spark.sql.execution.streaming.state.StateStore
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
 
-class StreamingDeduplicationSuite extends StateStoreMetricsTest with BeforeAndAfterAll {
+class StreamingDeduplicationSuite extends StateStoreMetricsTest {
 
   import testImplicits._
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    StateStore.stop()
-  }
 
   test("deduplicate with all columns") {
     val inputData = MemoryStream[String]
@@ -285,7 +280,8 @@ class StreamingDeduplicationSuite extends StateStoreMetricsTest with BeforeAndAf
         { // State should have been cleaned if flag is set, otherwise should not have been cleaned
           if (flag) assertNumStateRows(total = 1, updated = 1)
           else assertNumStateRows(total = 7, updated = 1)
-        }
+        },
+        AssertOnQuery(q => q.lastProgress.sink.numOutputRows == 0L)
       )
     }
 
